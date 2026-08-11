@@ -188,13 +188,14 @@ Int FramePacer::getActualLogicTimeScaleFps(LogicTimeQueryFlags flags) const
 		return TheNetwork->getFrameRate();
 	}
 
-	if (isLogicTimeScaleEnabled())
-	{
-		return getLogicTimeScaleFps();
-	}
-
-	// Returns uncapped value to align with the render update as per the original game behavior.
-	return RenderFpsPreset::UncappedFpsValue;
+	// GeneralsX @bugfix 10/08/2026 Always return the fixed logic frame rate (30 Hz
+	// by default) instead of an "uncapped" value when the logic time scale feature
+	// is disabled. The uncapped value made the per-render-frame animation step a
+	// full logic frame; once the render loop runs faster than the logic (e.g. the
+	// 30 FPS cap was removed and the game renders at 200 FPS), every client-side
+	// animation (menus, cinematics, flags, building animations) ran ~6.7x too fast.
+	// Returning the real logic rate keeps client animations on real elapsed time.
+	return getLogicTimeScaleFps();
 }
 
 Real FramePacer::getActualLogicTimeScaleRatio(LogicTimeQueryFlags flags) const

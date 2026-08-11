@@ -41,7 +41,6 @@ Int GameMain()
 	int exitcode = 0;
 	// initialize the game engine using factory function
 	TheFramePacer = new FramePacer();
-	TheFramePacer->enableFramesPerSecondLimit(TRUE);
 	TheGameEngine = CreateGameEngine();
 	TheGameEngine->init();
 
@@ -63,4 +62,3 @@ Int GameMain()
 
 	return exitcode;
 }
-

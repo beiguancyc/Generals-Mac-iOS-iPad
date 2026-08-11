@@ -648,6 +648,7 @@ private:
 	TransitionWindowList m_transitionWindowList;
 	Int m_directionMultiplier;
 	Int m_currentFrame; ///< maintain how long we've spent on this transition;
+	Real m_frameAccumulator; ///< accumulated real time used to pace the transition (30 Hz design)
 	AsciiString m_name;
 };
 

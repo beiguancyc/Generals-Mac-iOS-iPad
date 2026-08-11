@@ -52,6 +52,7 @@
 // USER INCLUDES //////////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
 #include "GameLogic/GameLogic.h"
+#include "Common/FramePacer.h"
 #include "GameClient/GameWindowTransitions.h"
 #include "GameClient/GameWindow.h"
 #include "GameClient/GameWindowManager.h"
@@ -240,6 +241,7 @@ Int TransitionWindow::getTotalFrames()
 TransitionGroup::TransitionGroup()
 {
 	m_currentFrame = 0;
+	m_frameAccumulator = 0.0f;
 	m_fireOnce = FALSE;
 }
 
@@ -257,6 +259,7 @@ TransitionGroup::~TransitionGroup()
 void TransitionGroup::init()
 {
 	m_currentFrame = 0;
+	m_frameAccumulator = 0.0f;
 	m_directionMultiplier = 1;
 	TransitionWindowList::iterator it = m_transitionWindowList.begin();
 	while (it != m_transitionWindowList.end())
@@ -270,7 +273,17 @@ void TransitionGroup::init()
 
 void TransitionGroup::update()
 {
-	m_currentFrame += m_directionMultiplier; // we go forward or backwards depending.
+	// GeneralsX @bugfix 10/08/2026 Advance transitions on real elapsed time
+	// instead of one frame per update() call. The transition system was designed
+	// for a 30 FPS render loop; after the render FPS cap was removed, menu fades
+	// and slides completed ~6.7x too fast at 200 FPS.
+	m_frameAccumulator += TheFramePacer->getUpdateTime();
+	const Real transitionFrameTime = 1.0f / 30.0f;
+	while (m_frameAccumulator >= transitionFrameTime)
+	{
+		m_currentFrame += m_directionMultiplier; // we go forward or backwards depending.
+		m_frameAccumulator -= transitionFrameTime;
+	}
 	TransitionWindowList::iterator it = m_transitionWindowList.begin();
 	while (it != m_transitionWindowList.end())
 	{
@@ -580,4 +593,3 @@ void GameWindowTransitionsHandler::parseWindow( INI* ini, void *instance, void *
 	ini->initFromINI(transWin, myFieldParse);
 	((TransitionGroup*)instance)->addWindow(transWin);
 }
-

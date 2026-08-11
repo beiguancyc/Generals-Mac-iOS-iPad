@@ -919,9 +919,7 @@ Bool GameEngine::canUpdateNetworkGameLogic()
 /// -----------------------------------------------------------------------------------------------
 Bool GameEngine::canUpdateRegularGameLogic()
 {
-	const Bool enabled = TheFramePacer->isLogicTimeScaleEnabled();
 	const Int logicTimeScaleFps = TheFramePacer->getLogicTimeScaleFps();
-	const Int maxRenderFps = TheFramePacer->getFramesPerSecondLimit();
 
 #if defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
 	const Bool useFastMode = TheGlobalData->m_TiVOFastMode;
@@ -929,23 +927,24 @@ Bool GameEngine::canUpdateRegularGameLogic()
 	const Bool useFastMode = TheGlobalData->m_TiVOFastMode && TheGameLogic->isInReplayGame();
 #endif
 
-	if (useFastMode || !enabled || logicTimeScaleFps >= maxRenderFps)
+	if (useFastMode)
 	{
-		// Logic time scale is uncapped or larger equal Render FPS. Update straight away.
+		// Debug fast mode: step logic on every render frame.
 		return true;
 	}
-	else
-	{
-		// TheSuperHackers @tweak xezon 06/08/2025
-		// The logic time step is now decoupled from the render update.
-		const Real targetFrameTime = 1.0f / logicTimeScaleFps;
-		m_logicTimeAccumulator += min(TheFramePacer->getUpdateTime(), targetFrameTime);
 
-		if (m_logicTimeAccumulator >= targetFrameTime)
-		{
-			m_logicTimeAccumulator -= targetFrameTime;
-			return true;
-		}
+	// GeneralsX @bugfix 10/08/2026 Step the logic on real elapsed time at a fixed
+	// logicTimeScaleFps (30 Hz by default) instead of once per render frame.
+	// Previously the logic advanced once per render frame whenever the render FPS
+	// was at least the logic FPS. After the 30 FPS render cap was removed the
+	// game simulated many times faster than real time.
+	const Real targetFrameTime = 1.0f / logicTimeScaleFps;
+	m_logicTimeAccumulator += min(TheFramePacer->getUpdateTime(), targetFrameTime);
+
+	if (m_logicTimeAccumulator >= targetFrameTime)
+	{
+		m_logicTimeAccumulator -= targetFrameTime;
+		return true;
 	}
 
 	return false;

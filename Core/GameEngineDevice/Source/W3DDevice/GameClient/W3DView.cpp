@@ -1565,8 +1565,13 @@ void W3DView::update()
 		}
 	}
 
-	if (!(TheScriptEngine->isTimeFrozenDebug()/* || TheScriptEngine->isTimeFrozenScript()*/) && !TheGameLogic->isGamePaused()) {
+	if (TheGameLogic->hasUpdated() &&
+		!(TheScriptEngine->isTimeFrozenDebug()/* || TheScriptEngine->isTimeFrozenScript()*/) && !TheGameLogic->isGamePaused()) {
 		// If we aren't frozen for debug, allow the camera to follow scripted movements.
+		// GeneralsX @bugfix 10/08/2026 Step scripted camera movements (rotate/pitch/zoom)
+		// once per logic frame instead of once per render frame. They advance one frame
+		// per call and were designed for a 30 FPS render loop; at uncapped render rates
+		// (e.g. 200 FPS) the shell-map rotation and in-engine cinematics ran ~6.7x too fast.
 		if (updateCameraMovements()) {
 			didScriptedMovement = true;
 			m_recalcCamera = true;
